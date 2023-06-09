@@ -24,6 +24,8 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const userCollection = client.db("CreativaDesign").collection("users");
+    const commentCollection = client.db("CreativaDesign").collection("comment");
+
 
     app.post("/users", async (req, res) => {
       const user = req.body;
@@ -34,6 +36,17 @@ async function run() {
         return res.send({ message: "user already exists" });
       }
       const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
+    // comment
+    app.post("/comment", async (req, res) => {
+      const body = req.body;
+      const result = await commentCollection.insertOne(body);
+      res.send(result);
+    });
+    app.get("/myComment", async (req, res) => {
+      const result = await commentCollection.find().toArray();
+      // console.log(result);
       res.send(result);
     });
 
