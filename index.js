@@ -102,7 +102,7 @@ async function run() {
     };
     app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-
+      console.log(email);
       if (req.decoded.email !== email) {
         res.send({ admin: false });
       }
@@ -114,6 +114,7 @@ async function run() {
     });
     app.get("/users/student/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
+      console.log(email);
       if (req.decoded.email !== email) {
         res.send({ student: false });
       }
