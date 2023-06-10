@@ -179,12 +179,12 @@ async function run() {
     );
     app.get("/AllClass", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await classCollection.find().toArray();
-      res.send(result)
+      res.send(result);
     });
-    app.put("/updateClass/:id", async (req, res) => {
+    app.patch("/updateClass/:id",verifyJWT, verifyInstructor, async (req, res) => {
       const id = req.params.id;
       const body = req.body;
-      // console.log(body);
+      console.log(body);
       const query = { _id: new ObjectId(id) };
       const options = { upsert: true };
       const updateClass = {
@@ -202,8 +202,46 @@ async function run() {
       );
       res.send(result);
     });
+    app.patch("/feedBack/:id", async (req, res) => {
+      const id = req.params.id;
+      // console.log(id);
+      const body = req.body;
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updateStateForFeedBack = {
+        $set: {
+          state: body.state,
+        },
+      };
+      const result = await classCollection.updateOne(
+        query,
+        updateStateForFeedBack,
+        options
+      );
+      res.send(result);
+    });
+    app.patch("/UpdateFeedBack/:id", async (req, res) => {
+      const id = req.params.id;
+      // console.log(id);
+      const body = req.body;
+      console.log(body,"209");
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updateClassForFeedBack = {
+        $set: {
+          feedback: body.feedback,
+        },
+      };
+      const result = await classCollection.updateOne(
+        query,
+        updateClassForFeedBack,
+        options
+      );
+      res.send(result);
+    });
     app.delete("/deleteClass/:id", async (req, res) => {
       const id = req.params.id;
+      console.log(id);
       const query = { _id: new ObjectId(id) };
       const result = await classCollection.deleteOne(query);
       res.send(result);
