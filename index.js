@@ -22,10 +22,9 @@ const client = new MongoClient(uri, {
   },
 });
 
-
-
 const verifyJWT = (req, res, next) => {
   const authorization = req.headers.authorization;
+
   if (!authorization) {
     return res
       .status(401)
@@ -33,12 +32,12 @@ const verifyJWT = (req, res, next) => {
   }
 
   const token = authorization.split(" ")[1];
-
+  // console.log(token);
   jwt.verify(token, process.env.ACCESS_SECRET_TOKEN, (err, decoded) => {
     if (err) {
       return res
         .status(401)
-        .send({ error: true, message: "unauthorized access" });
+        .send({ error: true, message: "unauthorized access2" });
     }
 
     req.decoded = decoded;
@@ -46,13 +45,11 @@ const verifyJWT = (req, res, next) => {
   });
 };
 
-
-
 async function run() {
   try {
     const userCollection = client.db("CreativaDesign").collection("users");
     const commentCollection = client.db("CreativaDesign").collection("comment");
-
+    const classCollection = client.db("CreativaDesign").collection("classes");
 
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -67,7 +64,7 @@ async function run() {
     // admin
     const verifyAdmin = async (req, res, next) => {
       const email = req.decoded.email;
-      const query = { email: email };
+      const query = { email: email.email };
       const user = await userCollection.findOne(query);
       if (user?.role !== "admin") {
         return res
@@ -79,7 +76,7 @@ async function run() {
     // student
     const verifyStudent = async (req, res, next) => {
       const email = req.decoded.email;
-      const query = { email: email };
+      const query = { email: email.email };
       const user = await userCollection.findOne(query);
       if (user?.role !== "student") {
         return res
@@ -90,9 +87,11 @@ async function run() {
     };
     // instructor
     const verifyInstructor = async (req, res, next) => {
-      const email = req.decoded.email;
-      const query = { email: email };
+      const email = req.decoded;
+      const query = { email: email.email };
+      console.log(query, "email");
       const user = await userCollection.findOne(query);
+      console.log(user);
       if (user?.role !== "instructor") {
         return res
           .status(403)
@@ -102,7 +101,7 @@ async function run() {
     };
     app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      console.log(email);
+      // console.log(email);
       if (req.decoded.email !== email) {
         res.send({ admin: false });
       }
@@ -114,7 +113,7 @@ async function run() {
     });
     app.get("/users/student/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      console.log(email);
+      // console.log(email);
       if (req.decoded.email !== email) {
         res.send({ student: false });
       }
@@ -125,7 +124,6 @@ async function run() {
     });
     app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-
       if (req.decoded.email !== email) {
         res.send({ instructor: false });
       }
@@ -138,7 +136,7 @@ async function run() {
 
     app.post("/users", async (req, res) => {
       const user = req.body;
-      console.log(user);
+      // console.log(user);
       const query = { email: user.email };
       const existingUser = await userCollection.findOne(query);
       if (existingUser) {
@@ -149,17 +147,23 @@ async function run() {
     });
     app.get("/users", async (req, res) => {
       const result = await userCollection.find().toArray();
-      res.send(result)
+      res.send(result);
     });
     // comment
-    app.post("/comment", verifyJWT , async (req, res) => {
+    app.post("/comment", verifyJWT, async (req, res) => {
       const body = req.body;
       const result = await commentCollection.insertOne(body);
       res.send(result);
     });
-    app.get("/myComment",  async (req, res) => {
+    app.get("/myComment", async (req, res) => {
       const result = await commentCollection.find().toArray();
       // console.log(result);
+      res.send(result);
+    });
+    // add classes
+    app.post("/addClass", verifyJWT, verifyInstructor, async (req, res) => {
+      const body = req.body;
+      const result = await classCollection.insertOne(body);
       res.send(result);
     });
 
