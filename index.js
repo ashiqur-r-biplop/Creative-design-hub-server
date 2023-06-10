@@ -57,7 +57,6 @@ async function run() {
       const token = jwt.sign(user, process.env.ACCESS_SECRET_TOKEN, {
         expiresIn: "1h",
       });
-
       res.send({ token });
     });
 
@@ -88,11 +87,11 @@ async function run() {
     // instructor
     const verifyInstructor = async (req, res, next) => {
       const email = req.decoded;
-      console.log(email);
+      // console.log(email);
       const query = { email: email.email };
-      console.log(query, "email");
+      // console.log(query, "email");
       const user = await userCollection.findOne(query);
-      console.log(user);
+      // console.log(user);
       if (user?.role !== "instructor") {
         return res
           .status(403)
@@ -180,7 +179,7 @@ async function run() {
     app.put("/updateClass/:id", async (req, res) => {
       const id = req.params.id;
       const body = req.body;
-      console.log(body);
+      // console.log(body);
       const query = { _id: new ObjectId(id) };
       const options = { upsert: true };
       const updateClass = {
