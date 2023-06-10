@@ -88,6 +88,7 @@ async function run() {
     // instructor
     const verifyInstructor = async (req, res, next) => {
       const email = req.decoded;
+      console.log(email);
       const query = { email: email.email };
       console.log(query, "email");
       const user = await userCollection.findOne(query);
@@ -105,7 +106,6 @@ async function run() {
       if (req.decoded.email !== email) {
         res.send({ admin: false });
       }
-
       const query = { email: email };
       const user = await userCollection.findOne(query);
       const result = { admin: user?.role === "admin" };
@@ -164,6 +164,12 @@ async function run() {
     app.post("/addClass", verifyJWT, verifyInstructor, async (req, res) => {
       const body = req.body;
       const result = await classCollection.insertOne(body);
+      res.send(result);
+    });
+    app.get("/getClass/:email", verifyJWT, verifyInstructor, async (req, res) => {
+      const email = req.params.email;
+      const query = { instructorEmail: email };
+      const result = await classCollection.find(query).toArray();
       res.send(result);
     });
 
