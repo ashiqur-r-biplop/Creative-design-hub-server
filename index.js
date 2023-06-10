@@ -24,7 +24,6 @@ const client = new MongoClient(uri, {
 
 const verifyJWT = (req, res, next) => {
   const authorization = req.headers.authorization;
-
   if (!authorization) {
     return res
       .status(401)
@@ -63,7 +62,9 @@ async function run() {
     // admin
     const verifyAdmin = async (req, res, next) => {
       const email = req.decoded.email;
-      const query = { email: email.email };
+      console.log(email);
+      const query = { email: email };
+      console.log(query);
       const user = await userCollection.findOne(query);
       if (user?.role !== "admin") {
         return res
@@ -176,6 +177,10 @@ async function run() {
         res.send(result);
       }
     );
+    app.get("/AllClass", verifyJWT, verifyAdmin, async (req, res) => {
+      const result = await classCollection.find().toArray();
+      res.send(result)
+    });
     app.put("/updateClass/:id", async (req, res) => {
       const id = req.params.id;
       const body = req.body;
