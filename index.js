@@ -177,9 +177,19 @@ async function run() {
         const id = req?.params?.id;
         const filter = { _id: new ObjectId(id) };
         const result = await selectedClassCollection.deleteOne(filter);
-        res.send(result)
+        res.send(result);
       }
     );
+    app.get("/TopInstructor", async (req, res) => {
+      const filter = { role: "instructor" };
+      const result = await userCollection.find(filter).limit(6).toArray();
+      res.send(result);
+    });
+    app.get("/allInstructor", async (req, res) => {
+      const filter = { role: "instructor" };
+      const result = await userCollection.find(filter).toArray();
+      res.send(result);
+    });
     app.get("/usersManage", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
@@ -217,14 +227,23 @@ async function run() {
       }
     );
     app.get("/AllClass", verifyJWT, verifyAdmin, async (req, res) => {
-      const result = await classCollection.find().toArray();
+      const result = await classCollection
+        .find({
+          state: "Approve",
+        })
+        .toArray();
+      res.send(result);
+    });
+    app.get("/AllClassByViewr", async (req, res) => {
+      const state = { state: "Approve" };
+      const result = await classCollection.find(state).toArray();
       res.send(result);
     });
     app.get("/popularClasses", async (req, res) => {
       const result = await classCollection
-        .find({ enrollStudent: { $gt: 1 } })
-        .limit(6)
+        .find({})
         .sort({ enrollStudent: -1 })
+        .limit(6)
         .toArray();
       res.send(result);
     });
