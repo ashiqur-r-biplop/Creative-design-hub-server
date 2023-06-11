@@ -24,6 +24,7 @@ const client = new MongoClient(uri, {
 
 const verifyJWT = (req, res, next) => {
   const authorization = req.headers.authorization;
+  console.log(authorization);
   if (!authorization) {
     return res
       .status(401)
@@ -49,6 +50,9 @@ async function run() {
     const userCollection = client.db("CreativaDesign").collection("users");
     const commentCollection = client.db("CreativaDesign").collection("comment");
     const classCollection = client.db("CreativaDesign").collection("classes");
+    const selectedClassCollection = client
+      .db("CreativaDesign")
+      .collection("selectedClass");
 
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -62,9 +66,9 @@ async function run() {
     // admin
     const verifyAdmin = async (req, res, next) => {
       const email = req.decoded.email;
-      console.log(email);
+      // console.log(email);
       const query = { email: email };
-      console.log(query);
+      // console.log(query);
       const user = await userCollection.findOne(query);
       if (user?.role !== "admin") {
         return res
@@ -76,8 +80,10 @@ async function run() {
     // student
     const verifyStudent = async (req, res, next) => {
       const email = req.decoded.email;
-      const query = { email: email.email };
+      const query = { email: email };
+      // console.log(query);
       const user = await userCollection.findOne(query);
+      // console.log(user);
       if (user?.role !== "student") {
         return res
           .status(403)
@@ -146,6 +152,34 @@ async function run() {
       const result = await userCollection.insertOne(user);
       res.send(result);
     });
+    app.post("/selected", verifyJWT, verifyStudent, async (req, res) => {
+      const selectedClass = req.body;
+      const result = await selectedClassCollection.insertOne(selectedClass);
+      res.send(result);
+    });
+    app.get(
+      "/getSelectedClass/:email",
+
+      async (req, res) => {
+        const query = req.params.email;
+        console.log(query);
+        const filter = { studentEmail: query };
+        console.log(filter);
+        const result = await selectedClassCollection.find(filter).toArray();
+        res.send(result);
+      }
+    );
+    app.delete(
+      "/deleteSelectedClass/:id",
+      verifyJWT,
+      verifyStudent,
+      async (req, res) => {
+        const id = req?.params?.id;
+        const filter = { _id: new ObjectId(id) };
+        const result = await selectedClassCollection.deleteOne(filter);
+        res.send(result)
+      }
+    );
     app.get("/usersManage", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
@@ -186,6 +220,14 @@ async function run() {
       const result = await classCollection.find().toArray();
       res.send(result);
     });
+    app.get("/popularClasses", async (req, res) => {
+      const result = await classCollection
+        .find({ enrollStudent: { $gt: 1 } })
+        .limit(6)
+        .sort({ enrollStudent: -1 })
+        .toArray();
+      res.send(result);
+    });
     app.patch(
       "/updateClass/:id",
       verifyJWT,
@@ -193,7 +235,7 @@ async function run() {
       async (req, res) => {
         const id = req.params.id;
         const body = req.body;
-        console.log(body);
+        // console.log(body);
         const query = { _id: new ObjectId(id) };
         const options = { upsert: true };
         const updateClass = {
@@ -234,7 +276,7 @@ async function run() {
       const id = req.params.id;
       // console.log(id);
       const body = req.body;
-      console.log(body, "209");
+      // console.log(body, "209");
       const query = { _id: new ObjectId(id) };
       const options = { upsert: true };
       const updateClassForFeedBack = {
@@ -249,27 +291,32 @@ async function run() {
       );
       res.send(result);
     });
-    app.patch("/updateUserRole/:id", verifyJWT, verifyAdmin, async (req, res) => {
-      const id = req.params.id;
-      console.log(id);
-      const body = req.body;
-      const query = { _id: new ObjectId(id) };
-      const options = { upsert: true };
-      const updateUserRole = {
-        $set: {
-          role: body.role,
-        },
-      };
-      const result = await userCollection.updateOne(
-        query,
-        updateUserRole,
-        options
-      );
-      res.send(result);
-    });
+    app.patch(
+      "/updateUserRole/:id",
+      verifyJWT,
+      verifyAdmin,
+      async (req, res) => {
+        const id = req.params.id;
+        // console.log(id);
+        const body = req.body;
+        const query = { _id: new ObjectId(id) };
+        const options = { upsert: true };
+        const updateUserRole = {
+          $set: {
+            role: body.role,
+          },
+        };
+        const result = await userCollection.updateOne(
+          query,
+          updateUserRole,
+          options
+        );
+        res.send(result);
+      }
+    );
     app.delete("/deleteClass/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
+      // console.log(id);
       const query = { _id: new ObjectId(id) };
       const result = await classCollection.deleteOne(query);
       res.send(result);
