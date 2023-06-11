@@ -100,6 +100,7 @@ async function run() {
       }
       next();
     };
+
     app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       // console.log(email);
@@ -145,6 +146,10 @@ async function run() {
       const result = await userCollection.insertOne(user);
       res.send(result);
     });
+    app.get("/usersManage", verifyJWT, verifyAdmin, async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    });
     app.get("/users", async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
@@ -181,27 +186,32 @@ async function run() {
       const result = await classCollection.find().toArray();
       res.send(result);
     });
-    app.patch("/updateClass/:id",verifyJWT, verifyInstructor, async (req, res) => {
-      const id = req.params.id;
-      const body = req.body;
-      console.log(body);
-      const query = { _id: new ObjectId(id) };
-      const options = { upsert: true };
-      const updateClass = {
-        $set: {
-          imgURL: body.imgURL,
-          className: body.className,
-          price: parseFloat(body.price),
-          availableSeats: parseFloat(body.availableSeats),
-        },
-      };
-      const result = await classCollection.updateOne(
-        query,
-        updateClass,
-        options
-      );
-      res.send(result);
-    });
+    app.patch(
+      "/updateClass/:id",
+      verifyJWT,
+      verifyInstructor,
+      async (req, res) => {
+        const id = req.params.id;
+        const body = req.body;
+        console.log(body);
+        const query = { _id: new ObjectId(id) };
+        const options = { upsert: true };
+        const updateClass = {
+          $set: {
+            imgURL: body.imgURL,
+            className: body.className,
+            price: parseFloat(body.price),
+            availableSeats: parseFloat(body.availableSeats),
+          },
+        };
+        const result = await classCollection.updateOne(
+          query,
+          updateClass,
+          options
+        );
+        res.send(result);
+      }
+    );
     app.patch("/feedBack/:id", async (req, res) => {
       const id = req.params.id;
       // console.log(id);
@@ -224,7 +234,7 @@ async function run() {
       const id = req.params.id;
       // console.log(id);
       const body = req.body;
-      console.log(body,"209");
+      console.log(body, "209");
       const query = { _id: new ObjectId(id) };
       const options = { upsert: true };
       const updateClassForFeedBack = {
@@ -235,6 +245,24 @@ async function run() {
       const result = await classCollection.updateOne(
         query,
         updateClassForFeedBack,
+        options
+      );
+      res.send(result);
+    });
+    app.patch("/updateUserRole/:id", verifyJWT, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const body = req.body;
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updateUserRole = {
+        $set: {
+          role: body.role,
+        },
+      };
+      const result = await userCollection.updateOne(
+        query,
+        updateUserRole,
         options
       );
       res.send(result);
