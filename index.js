@@ -4,6 +4,8 @@ const app = express();
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
+
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 // middleware
 app.use(cors());
@@ -53,6 +55,19 @@ async function run() {
     const selectedClassCollection = client
       .db("CreativaDesign")
       .collection("selectedClass");
+
+    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+      const price = req.body;
+      if (price) {
+        const amount = parseFloat(price) * 100;
+        const paymentIntent = await stripe.paymentIntent.create({
+          amount: amount,
+          currency: "usd",
+          payment_method_types: ["card"],
+        });
+        res.send({ clientSecret: paymentIntent.client_secret });
+      }
+    });
 
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -227,11 +242,7 @@ async function run() {
       }
     );
     app.get("/AllClass", verifyJWT, verifyAdmin, async (req, res) => {
-      const result = await classCollection
-        .find({
-          state: "Approve",
-        })
-        .toArray();
+      const result = await classCollection.find().toArray();
       res.send(result);
     });
     app.get("/AllClassByViewr", async (req, res) => {
