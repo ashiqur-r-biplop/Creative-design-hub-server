@@ -273,12 +273,28 @@ async function run() {
       async (req, res) => {
         const email = req.params.email;
         const query = { instructorEmail: email };
-        const result = await classCollection.find(query).toArray();
+        const pendingData = await classCollection
+          .find({
+            $and: [query, { state: "pending" }],
+          })
+          .toArray();
+        const remainingData = await classCollection
+          .find({
+            $and: [query, { state: { $ne: "pending" } }],
+          })
+          .toArray();
+        const result = pendingData.concat(remainingData);
         res.send(result);
       }
     );
     app.get("/AllClass", verifyJWT, verifyAdmin, async (req, res) => {
-      const result = await classCollection.find().toArray();
+      const pendingData = await classCollection
+        .find({ state: "pending" })
+        .toArray();
+      const remainingData = await classCollection
+        .find({ state: { $ne: "pending" } })
+        .toArray();
+      const result = pendingData.concat(remainingData);
       res.send(result);
     });
     app.get("/AllClassByViewr", async (req, res) => {
@@ -304,7 +320,10 @@ async function run() {
       async (req, res) => {
         const email = req.params.email;
         const state = { enrolled: "successfully", studentEmail: email };
-        const result = await classCollection.find(state).sort({ date: -1 }).toArray();
+        const result = await classCollection
+          .find(state)
+          .sort({ date: -1 })
+          .toArray();
         res.send(result);
       }
     );
