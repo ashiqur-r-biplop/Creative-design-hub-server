@@ -26,7 +26,7 @@ const client = new MongoClient(uri, {
 
 const verifyJWT = (req, res, next) => {
   const authorization = req.headers.authorization;
-  console.log(authorization);
+  // console.log(authorization);
   if (!authorization) {
     return res
       .status(401)
@@ -175,9 +175,9 @@ async function run() {
     });
     app.get("/getSelectedClass/:email", async (req, res) => {
       const query = req.params.email;
-      console.log(query);
+      // console.log(query);
       const filter = { studentEmail: query };
-      console.log(filter);
+      // console.log(filter);
       const result = await selectedClassCollection.find(filter).toArray();
       res.send(result);
     });
@@ -189,13 +189,13 @@ async function run() {
         const id = req.params.id;
         // console.log(id);
         const body = req.body;
-        console.log(body);
+        // console.log(body);
         const query = { _id: new ObjectId(id) };
         const options = { upsert: true };
         const paidClass = {
           $set: {
             className: body?.className,
-            enrollStudent:  body?.enrollStudent + 1 ,
+            enrollStudent: body?.enrollStudent + 1,
             imgURL: body?.imgURL,
             price: body?.price,
             instructorEmail: body?.instructorEmail,
@@ -204,19 +204,19 @@ async function run() {
             state: body?.state,
             selectedId: body?.selectedId,
             feedback: body?.feedback,
-            availableSeats:  body?.availableSeats - 1 ,
+            availableSeats: body?.availableSeats - 1,
             transactionId: body?.transactionId,
             date: body.date,
             enrolled: body.enrolled || "successfully",
           },
         };
-        console.log(paidClass, "213");
+        // console.log(paidClass, "213");
         const result = await classCollection.updateOne(
           query,
           paidClass,
           options
         );
-        console.log(result);
+        // console.log(result);
         res.send(result);
       }
     );
@@ -286,6 +286,39 @@ async function run() {
       const result = await classCollection.find(state).toArray();
       res.send(result);
     });
+    app.get(
+      "/enrollClasses/:email",
+      verifyJWT,
+      verifyStudent,
+      async (req, res) => {
+        const email = req.params.email;
+        const state = { enrolled: "successfully", studentEmail: email };
+        const result = await classCollection.find(state).toArray();
+        res.send(result);
+      }
+    );
+    app.get(
+      "/paymentHistoryDone/:email",
+      verifyJWT,
+      verifyStudent,
+      async (req, res) => {
+        const email = req.params.email;
+        const state = { enrolled: "successfully", studentEmail: email };
+        const result = await classCollection.find(state).sort({ date: -1 }).toArray();
+        res.send(result);
+      }
+    );
+    app.delete(
+      "/deleteBeforePayment/:id",
+      verifyJWT,
+      verifyStudent,
+      async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const result = await selectedClassCollection.deleteOne(filter);
+        res.send(result);
+      }
+    );
     app.get("/popularClasses", async (req, res) => {
       const result = await classCollection
         .find({})
