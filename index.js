@@ -57,10 +57,11 @@ async function run() {
       .collection("selectedClass");
 
     app.post("/create-payment-intent", verifyJWT, async (req, res) => {
-      const price = req.body;
+      const price = req.body.price;
+
       if (price) {
         const amount = parseFloat(price) * 100;
-        const paymentIntent = await stripe.paymentIntent.create({
+        const paymentIntent = await stripe.paymentIntents.create({
           amount: amount,
           currency: "usd",
           payment_method_types: ["card"],
@@ -172,15 +173,50 @@ async function run() {
       const result = await selectedClassCollection.insertOne(selectedClass);
       res.send(result);
     });
-    app.get(
-      "/getSelectedClass/:email",
-
+    app.get("/getSelectedClass/:email", async (req, res) => {
+      const query = req.params.email;
+      console.log(query);
+      const filter = { studentEmail: query };
+      console.log(filter);
+      const result = await selectedClassCollection.find(filter).toArray();
+      res.send(result);
+    });
+    app.patch(
+      "/postPayAmount/:id",
+      verifyJWT,
+      verifyStudent,
       async (req, res) => {
-        const query = req.params.email;
-        console.log(query);
-        const filter = { studentEmail: query };
-        console.log(filter);
-        const result = await selectedClassCollection.find(filter).toArray();
+        const id = req.params.id;
+        // console.log(id);
+        const body = req.body;
+        console.log(body);
+        const query = { _id: new ObjectId(id) };
+        const options = { upsert: true };
+        const paidClass = {
+          $set: {
+            className: body?.className,
+            enrollStudent:  body?.enrollStudent + 1 ,
+            imgURL: body?.imgURL,
+            price: body?.price,
+            instructorEmail: body?.instructorEmail,
+            instructorName: body?.instructorName,
+            studentEmail: body?.studentEmail,
+            state: body?.state,
+            selectedId: body?.selectedId,
+            feedback: body?.feedback,
+            availableSeats:  body?.availableSeats - 1 ,
+            transactionId: body?.transactionId,
+            date: body.date,
+            enrolled: body.enrolled || "successfully",
+          },
+        };
+        console.log(paidClass, "213");
+        const result = await classCollection.updateOne(
+          query,
+          paidClass,
+          options
+        );
+        console.log(result);
         res.send(result);
       }
     );
