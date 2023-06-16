@@ -250,8 +250,9 @@ async function run() {
       res.send(result);
     });
     // comment
-    app.post("/comment", verifyJWT, async (req, res) => {
+    app.post("/comment", async (req, res) => {
       const body = req.body;
+      console.log(body);
       const result = await commentCollection.insertOne(body);
       res.send(result);
     });
