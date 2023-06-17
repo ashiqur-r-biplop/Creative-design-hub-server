@@ -56,6 +56,26 @@ async function run() {
       .db("CreativaDesign")
       .collection("selectedClass");
 
+    app.get("/overView", async (req, res) => {
+      const activeUser = await userCollection.find().toArray();
+      const Review = await commentCollection.estimatedDocumentCount();
+      const AllClasses = await classCollection.find().toArray();
+      const activeStudent = AllClasses.reduce(
+        (sum, classes) => sum + classes.enrollStudent,
+        0
+      );
+      const Revenue = AllClasses.reduce(
+        (sum, classes) => sum + (classes.enrollStudent * classes.price),
+        0
+      );
+      res.send({
+        activeUser: activeUser.length,
+        Review: Review,
+        activeStudent: activeStudent,
+        Revenue,
+      });
+    });
+
     app.post("/create-payment-intent", verifyJWT, async (req, res) => {
       const price = req.body.price;
 
@@ -279,6 +299,7 @@ async function run() {
             $and: [query, { state: "pending" }],
           })
           .toArray();
+
         const remainingData = await classCollection
           .find({
             $and: [query, { state: { $ne: "pending" } }],
@@ -288,14 +309,32 @@ async function run() {
         res.send(result);
       }
     );
+    app.get("/upcomingClasses", async (req, res) => {
+      const upComingData = await classCollection
+        .find({ state: "upcoming" })
+        .limit(3)
+        .toArray();
+      res.send(upComingData);
+    });
+    app.get("/allUpcomingClasses", async (req, res) => {
+      const upComingData = await classCollection
+        .find({ state: "upcoming" })
+        .toArray();
+      res.send(upComingData);
+    });
     app.get("/AllClass", verifyJWT, verifyAdmin, async (req, res) => {
       const pendingData = await classCollection
         .find({ state: "pending" })
         .toArray();
-      const remainingData = await classCollection
-        .find({ state: { $ne: "pending" } })
+      const upcoming = await classCollection
+        .find({ state: "upcoming" })
         .toArray();
-      const result = pendingData.concat(remainingData);
+      const remainingData = await classCollection
+        .find({ state: { $nin: ["pending", "upcoming"] } })
+        .toArray();
+      const result = pendingData.concat(upcoming).concat(remainingData);
+      console.log(result);
+
       res.send(result);
     });
     app.get("/AllClassByViewr", async (req, res) => {
